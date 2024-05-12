@@ -4,6 +4,7 @@
 
 - 开源地址：https://github.com/yxzlwz/cloudreve-sdk
 - PyPI：https://pypi.org/project/cloudreve/
+- API文档：https://cloudreve.apifox.cn/
 
 ## 示例
 
