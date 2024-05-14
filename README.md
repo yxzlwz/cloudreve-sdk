@@ -11,7 +11,7 @@
 from cloudreve import Cloudreve
 
 # 初始化
-conn = Cloudreve('https://cloud.yixiangzhilv.com')
+conn = Cloudreve('http://127.0.0.1:5212')
 
 # 登录
 conn.login('admin@cloudreve.org', '123456')
@@ -40,6 +40,9 @@ conn.rename(file_id, 'world.py')
 
 # 移动文件
 conn.move('/world.py', '/python')
+
+# 上传文件
+conn.upload('/my_file_backup.py', 'D:/my_file.py')
 ```
 
 ## 联系我们

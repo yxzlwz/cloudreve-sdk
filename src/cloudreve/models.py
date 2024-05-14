@@ -1,4 +1,6 @@
-from requests import Session
+from pathlib import Path
+
+from requests import Session, request
 from urllib.parse import quote_plus
 
 
@@ -274,3 +276,83 @@ class Cloudreve:
         dir_path = revise_file_path(dir_path)
 
         self.request('put', '/directory', json={'path': dir_path})
+
+    def upload_to_local(self, local_file: Path, sessionID, chunkSize, expires):
+        with open(local_file, 'rb') as file:
+            file_data = file.read()
+            self.request(
+                'post',
+                f'/file/upload/{sessionID}/0',
+                headers={
+                    'Content-Type': 'application/octet-stream',
+                },
+                data=file_data,
+            )
+
+    def upload_to_onedrive(self, local_file: Path, sessionID, chunkSize,
+                           expires, uploadURLs):
+        upload_url = uploadURLs[0]
+        file_size = local_file.stat().st_size
+        with open(local_file, 'rb') as file:
+            for i in range(0, file_size, chunkSize):
+                start = i
+                end = min(i + chunkSize, file_size) - 1
+                request(
+                    'put',
+                    upload_url,
+                    headers={
+                        'Content-Type': 'application/octet-stream',
+                        'Content-Range': f'bytes {start}-{end}/{file_size}',
+                    },
+                    data=file.read(chunkSize),
+                )
+        self.request('post', f'/callback/onedrive/finish/{sessionID}', json={})
+
+    def upload(self,
+               file_path,
+               local_file_path,
+               policy_id=None,
+               policy_type=None):
+        '''
+        上传文件通用方法
+        @param file_path: 文件目标路径
+        @param local_file_path: 本地文件路径
+        @param policy_id: 存储策略ID（可选）
+        @param policy_type: 存储策略类型（可选）
+        当且仅当存储策略ID和类型同时存在时参数生效，否则程序将通过list方法获取存储策略信息
+        '''
+
+        local_file = Path(local_file_path)
+        if not local_file.is_file():
+            raise FileNotFoundError(f'{local_file_path} is not a file')
+
+        dir = file_path[:file_path.rfind('/')] or '/'
+        name = file_path[file_path.rfind('/') + 1:]
+
+        if not (policy_id and policy_type):
+            policy = self.list(dir)['policy']
+            policy_id, policy_type = policy['id'], policy['type']
+
+        body = {
+            'path': dir,
+            'name': name,
+            'size': local_file.stat().st_size,
+            'last_modified': int(local_file.stat().st_mtime * 1000),
+            'policy_id': policy_id,
+            'mime_type': '',
+        }
+
+        r = self.request('put', '/file/upload', json=body)
+
+        if policy_type == 'local':
+            return self.upload_to_local(
+                local_file=local_file,
+                **r,
+            )
+        elif policy_type == 'onedrive':
+            return self.upload_to_onedrive(
+                local_file=local_file,
+                **r,
+            )
+        else:
+            raise ValueError(f'Policy type {policy_type} is not currently supported')
