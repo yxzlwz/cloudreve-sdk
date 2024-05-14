@@ -12,6 +12,10 @@
 pip3 install cloudreve
 ```
 
+## 使用前说明
+
+- 本项目上传功能目前只适配了 **本机存储** 和 **OneDrive存储** ，有别的需求可以提PR。
+
 ## 示例
 
 ```python
