@@ -31,7 +31,7 @@ class Cloudreve:
     user: dict
 
     def __init__(self,
-                 base_url: str,
+                 base_url: str = 'http://127.0.0.1:5212',
                  proxy=None,
                  verify=True,
                  headers=None,
@@ -170,6 +170,70 @@ class Cloudreve:
             for chunk in r.iter_content(chunk_size=1024):
                 if chunk:
                     f.write(chunk)
+
+    def get_source_url(self, file_id, url_only=True):
+        '''
+        获取文件直链
+        @param file_id: 文件ID，可传递列表
+        @param url_only: 若为True则只返回直链，若为False则返回包含url和name的字典。
+        @return: 直链列表，若url_only=True，则列表项为字符串；否则返回包含url和name的字典列表。
+        请注意：由于Cloudreve API设计问题，传入的文件ID为列表时，返回的数据无序且不包含文件ID。因此请勿在同时获取多个直链时启用url_only。
+        '''
+
+        is_list = type(file_id) == list
+
+        items = file_id if is_list else [file_id]
+
+        r = self.request('post', '/file/source', json={'items': items})
+
+        res = []
+
+        if url_only:
+            assert len(
+                r
+            ) == 1, '由于Cloudreve API设计问题，传入的文件ID为列表时，返回的数据无序且不包含文件ID。因此请勿在同时获取多个直链时启用url_only。'
+            for i in r:
+                res.append(i['url'])
+        else:
+            for i in r:
+                res.append({'url': i['url'], 'name': i['name']})
+
+        if is_list:
+            return res
+        else:
+            return res[0]
+
+    def get_share_url(self,
+                      id,
+                      is_dir=False,
+                      preview=True,
+                      downloads=-1,
+                      expire=0,
+                      password=''):
+        '''
+        获取文件分享链接
+        @param id: 文件或文件夹ID
+        @param is_dir: 是否为文件夹
+        @param preview: 是否允许预览
+        @param downloads: 下载次数限制（默认不限制）
+        @param expire: 过期时间（自现在开始的秒数）
+        @param password: 密码
+        '''
+
+        assert downloads <= 0 or expire > 0, '由于Cloudreve限制，启用下载次数限制需同时启用过期时间，否则分享将立即过期'
+
+        r = self.request('post',
+                         '/share',
+                         json={
+                             'id': id,
+                             'is_dir': is_dir,
+                             'preview': preview,
+                             'downloads': downloads,
+                             'expire': expire,
+                             'password': password,
+                         })
+
+        return r
 
     def delete(self, file_id, is_dir=False, force=False, unlink=False):
         '''
@@ -355,4 +419,5 @@ class Cloudreve:
                 **r,
             )
         else:
-            raise ValueError(f'Policy type {policy_type} is not currently supported')
+            raise ValueError(
+                f'Policy type {policy_type} is not currently supported')
