@@ -419,5 +419,4 @@ class Cloudreve:
                 **r,
             )
         else:
-            raise ValueError(
-                f'Policy type {policy_type} is not currently supported')
+            raise ValueError(f'存储策略 {policy_type} 暂时不受支持，若有需求请在GitHub留言')
