@@ -343,15 +343,23 @@ class Cloudreve:
 
     def upload_to_local(self, local_file: Path, sessionID, chunkSize, expires):
         with open(local_file, 'rb') as file:
-            file_data = file.read()
-            self.request(
-                'post',
-                f'/file/upload/{sessionID}/0',
-                headers={
-                    'Content-Type': 'application/octet-stream',
-                },
-                data=file_data,
-            )
+            block_id = 0
+            while True:
+                chunk = file.read(chunkSize)
+                if not chunk:
+                    break
+
+                self.request(
+                    'post',
+                    f'/file/upload/{sessionID}/{block_id}',
+                    headers={
+                        'Content-Length': str(len(chunk)),
+                        'Content-Type': 'application/octet-stream',
+                    },
+                    data=chunk,
+                )
+
+                block_id += 1
 
     def upload_to_onedrive(self, local_file: Path, sessionID, chunkSize,
                            expires, uploadURLs):
