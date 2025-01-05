@@ -156,6 +156,7 @@ class Cloudreve:
         url = self.request('put', f'/file/download/{file_id}')
         if not url.startswith('http'):
             url = self.base_url + url
+        return url
 
     def download(self, file_id, save_path):
         '''
@@ -380,6 +381,33 @@ class Cloudreve:
                 )
         self.request('post', f'/callback/onedrive/finish/{sessionID}', json={})
 
+    def upload_to_oss(
+        self,
+        local_file: Path,
+        sessionID,
+        chunkSize,
+        expires,
+        uploadURLs,
+        completeURL,
+        **kwards,
+    ):
+        upload_url = uploadURLs[0]
+        file_size = local_file.stat().st_size
+        with open(local_file, 'rb') as file:
+            for i in range(0, file_size, chunkSize):
+                start = i
+                end = min(i + chunkSize, file_size) - 1
+                r = request(
+                    'put',
+                    upload_url,
+                    headers={
+                        'Content-Type': 'application/octet-stream',
+                        'Content-Range': f'bytes {start}-{end}/{file_size}',
+                    },
+                    data=file.read(chunkSize),
+                )
+        request('post', completeURL)
+
     def upload(self,
                file_path,
                local_file_path,
@@ -426,5 +454,10 @@ class Cloudreve:
                 local_file=local_file,
                 **r,
             )
+        # elif policy_type == 'oss':
+        #     return self.upload_to_oss(
+        #         local_file=local_file,
+        #         **r,
+        #     )
         else:
             raise ValueError(f'存储策略 {policy_type} 暂时不受支持，若有需求请在GitHub留言')
