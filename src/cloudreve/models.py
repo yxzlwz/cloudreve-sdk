@@ -153,7 +153,9 @@ class Cloudreve:
         @return: 下载链接
         '''
 
-        return self.request('put', f'/file/download/{file_id}')
+        url = self.request('put', f'/file/download/{file_id}')
+        if not url.startswith('http'):
+            url = self.base_url + url
 
     def download(self, file_id, save_path):
         '''
@@ -189,9 +191,7 @@ class Cloudreve:
         res = []
 
         if url_only:
-            assert len(
-                r
-            ) == 1, '由于Cloudreve API设计问题，传入的文件ID为列表时，返回的数据无序且不包含文件ID。因此请勿在同时获取多个直链时启用url_only。'
+            assert len(r) == 1, '传入的文件ID为列表时无法启用url_only。'
             for i in r:
                 res.append(i['url'])
         else:
@@ -220,7 +220,7 @@ class Cloudreve:
         @param password: 密码
         '''
 
-        assert downloads <= 0 or expire > 0, '由于Cloudreve限制，启用下载次数限制需同时启用过期时间，否则分享将立即过期'
+        assert downloads <= 0 or expire > 0, '设置下载次数限制需同时设置过期时间。'
 
         r = self.request('post',
                          '/share',
