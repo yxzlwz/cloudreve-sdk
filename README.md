@@ -1,6 +1,6 @@
-# Cloudreve SDK
+# Cloudreve V3 SDK
 
-本项目为 [Cloudreve](https://github.com/cloudreve/Cloudreve) 社区版的 Python SDK。
+本项目为 [Cloudreve](https://github.com/cloudreve/Cloudreve) V3 社区版的 Python SDK。
 
 - 开源地址：https://github.com/yxzlwz/cloudreve-sdk
 - PyPI：https://pypi.org/project/cloudreve/
@@ -14,8 +14,9 @@ pip3 install cloudreve
 
 ## 使用前说明
 
-- 本项目理论上支持所有存储功能的下载，但上传功能目前只适配了**本机存储**和**OneDrive存储**，有别的需求可以提PR。
-- 鉴于Cloudreve V3的诸多问题和已知V4不开源的消息，本人有意向重新维护一个多用户开源网盘项目，目前正在规划中，有意者欢迎通过页面底部联系方式与我交流！
+本项目理论上支持所有存储功能的下载，但上传功能目前只适配了**本机存储**和**OneDrive存储**，有别的需求可以提PR。
+
+本项目暂时没有适配 Cloudreve V4 。
 
 ## 示例
 
