@@ -31,6 +31,9 @@ conn = Cloudreve('http://127.0.0.1:5212')
 # 登录
 conn.login('admin@cloudreve.org', '123456')
 
+# 列目录
+conn.list("/")
+
 # 获取文件ID
 file_id = conn.get_id('/hello.py')
 
@@ -78,5 +81,5 @@ share_link_str3 = conn.get_share_url('IdOfDir', is_dir=True)
 
 ## 联系我们
 
-- Email：yxzlwz@gmail.com
+- Email：i@yxzl.dev
 - TG 群：https://t.me/+XW2ok10N8DExMDU1
