@@ -1,1 +1,1 @@
-from .models import Cloudreve
+from .models import Cloudreve, CloudreveV3, CloudreveV4

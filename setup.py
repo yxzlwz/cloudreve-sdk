@@ -11,7 +11,7 @@ os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
 setup(
     name='cloudreve',
-    version='1.0.7',
+    version='2.0.0',
     package_dir={'': 'src'},
     packages=find_packages(where='src'),
     include_package_data=True,
