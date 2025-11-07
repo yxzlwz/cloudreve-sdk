@@ -11,12 +11,12 @@ os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
 setup(
     name='cloudreve',
-    version='2.0.0',
+    version='2.0.1',
     package_dir={'': 'src'},
     packages=find_packages(where='src'),
     include_package_data=True,
     license='GPLv3',
-    description='Python SDK for Cloudreve sites',
+    description='Python SDK for Cloudreve V3 and V4',
     long_description=readme,
     long_description_content_type='text/markdown',
     url='https://github.com/yxzlwz/cloudreve-sdk',

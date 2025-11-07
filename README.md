@@ -30,7 +30,7 @@ pip3 install cloudreve
 | 获取文件直链         | ✅           | ✅           |
 | 获取分享链接         | ✅           | ✅           |
 | 上传文件（本地存储） | ✅           | ✅           |
-| 上传文件（OneDrive） | ✅           | 待测试      |
+| 上传文件（OneDrive） | ✅           | ✅           |
 | 上传文件（OSS）      | 待测试      | 待测试      |
 
 说明：
@@ -170,3 +170,7 @@ share_link_str2 = conn.get_share_url(uri, downloads=10, expire=86400, password='
 
 - Email：i@yxzl.dev
 - TG 群：https://t.me/+XW2ok10N8DExMDU1
+
+## 感谢
+
+- [@TeoZler](https://github.com/TeoZler) 协助测试 Cloudreve V4 OneDrive 上传

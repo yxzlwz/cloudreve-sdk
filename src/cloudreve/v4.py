@@ -64,7 +64,7 @@ class CloudreveV4:
 
     def request(self, method, url, **kwargs):
         r = self.session.request(method, self.base_url + url, **kwargs)
-        # print(r.text)
+        print(r.text)
         r = r.json()
 
         if r['code'] != 0:
@@ -78,7 +78,7 @@ class CloudreveV4:
         @param email: 邮箱
         @param password: 密码
         '''
-        r = self.request('POST',
+        r = self.request('post',
                          '/session/token',
                          json={
                              'email': email,
@@ -334,7 +334,7 @@ class CloudreveV4:
                 block_id += 1
 
     def _upload_to_onedrive(self, local_file: Path, session_id, chunk_size,
-                            upload_urls, **kwards):
+                            upload_urls, callback_secret, **kwards):
         upload_url = upload_urls[0]
         file_size = local_file.stat().st_size
         with open(local_file, 'rb') as file:
@@ -350,9 +350,9 @@ class CloudreveV4:
                     },
                     data=file.read(chunk_size),
                 )
+        print(123)
         self.request('post',
-                     f'/callback/onedrive/finish/{session_id}',
-                     json={})
+                     f'/callback/onedrive/{session_id}/{callback_secret}')
 
     def _upload_to_oss(
         self,
@@ -415,11 +415,11 @@ class CloudreveV4:
                 local_file=local_file,
                 **r,
             )
-        # elif policy_type == 'onedrive':
-        #     return self._upload_to_onedrive(
-        #         local_file=local_file,
-        #         **r,
-        #     )
+        elif policy_type == 'onedrive':
+            return self._upload_to_onedrive(
+                local_file=local_file,
+                **r,
+            )
         # elif policy_type == 'oss':
         #     return self._upload_to_oss(
         #         local_file=local_file,
