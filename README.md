@@ -37,6 +37,9 @@ conn.list("/")
 # 获取文件ID
 file_id = conn.get_id('/hello.py')
 
+# 删除文件
+conn.delete(file_id, is_dir=False)
+
 # 获取文件属性
 data = conn.get_property(file_id)
 print(data)
