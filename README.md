@@ -1,6 +1,6 @@
 # Cloudreve SDK
 
-本项目为**第三方制作**的 [Cloudreve](https://github.com/cloudreve/Cloudreve) V3 和 V4 社区版的 Python SDK。
+本项目为我fork**第三方制作**的 [Cloudreve](https://github.com/cloudreve/Cloudreve) V3 和 V4 社区版的 Python SDK。
 
 - 开源地址：https://github.com/yxzlwz/cloudreve-sdk
 - PyPI：https://pypi.org/project/cloudreve/
@@ -31,6 +31,7 @@ pip3 install cloudreve
 | 获取分享链接         | ✅           | ✅           |
 | 上传文件（本地存储） | ✅           | ✅           |
 | 上传文件（OneDrive） | ✅           | ✅           |
+| 上传文件（从机存储） | ✅           | ✅           |
 | 上传文件（OSS）      | 待测试      | 待测试      |
 
 说明：
