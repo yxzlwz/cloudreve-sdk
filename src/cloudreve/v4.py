@@ -1,7 +1,6 @@
 from mimetypes import guess_type
 from pathlib import Path
 from typing import List, Literal, Union
-import time
 
 from requests import Session, request
 
@@ -21,7 +20,7 @@ def revise_file_path(file_path: str) -> str:
 
 
 def uris_to_list(uris: Union[str, List[str]]) -> List[str]:
-    _items = uris if type(uris) == list else [uris]
+    _items = uris if type(uris) is list else [uris]
     return [revise_file_path(i) for i in _items]
 
 
@@ -36,6 +35,14 @@ class CloudreveV4:
                  verify=True,
                  headers=None,
                  cloudreve_session=None):
+        '''
+        @param base_url(str): Cloudreve站点地址
+        @param proxy(dict|str|None): 代理
+        @param verify(bool): 是否验证ssl证书
+        @param headers(dict|None): 自定义请求头
+        @param cloudreve_session(str|None): Cloudreve会话ID，提供后可无需调用登录接口
+        '''
+
         while base_url.endswith('/'):
             base_url = base_url[:-1]
         if not base_url.endswith('/api/v4'):
@@ -45,19 +52,18 @@ class CloudreveV4:
         self.session = Session()
         self.session.verify = verify
         if proxy is not None:
-            if type(proxy) == str:
+            if type(proxy) is str:
                 self.session.proxies = {'http': proxy, 'https': proxy}
-            elif type(proxy) == dict:
+            elif type(proxy) is dict:
                 self.session.proxies = proxy
         if cloudreve_session is not None:
             self.session.cookies.update(
                 {'cloudreve-session': cloudreve_session})
-        if type(headers) == dict:
+        if type(headers) is dict:
             self.session.headers.update(headers)
 
     def request(self, method, url, **kwargs):
         r = self.session.request(method, self.base_url + url, **kwargs)
-        # print(r.text) 
         r = r.json()
 
         if r['code'] != 0:
@@ -66,6 +72,11 @@ class CloudreveV4:
         return r.get('data')
 
     def login(self, email, password):
+        '''
+        登录（请在执行其他操作前调用此方法）
+        @param email: 邮箱
+        @param password: 密码
+        '''
         r = self.request('post',
                          '/session/token',
                          json={
@@ -85,6 +96,14 @@ class CloudreveV4:
                                'updated_at'] = 'created_at',
              order: Literal['asc', 'desc'] = 'asc',
              next_page_token=None):
+        '''
+        列出目录下的文件
+        @param path: 目录路径
+        @return: 文件列表
+            - parent: 目录文件夹信息
+            - files: 文件列表
+            - storage_policy: 文件存储策略
+        '''
         return self.request('get',
                             '/file',
                             params={
@@ -97,6 +116,11 @@ class CloudreveV4:
                             })
 
     def get_info(self, file_uri):
+        '''
+        获取文件信息
+        @param file_uri: 文件URI
+        @return: 文件信息
+        '''
         return self.request('get',
                             '/file/info',
                             params={
@@ -107,6 +131,11 @@ class CloudreveV4:
     get_property = get_info
 
     def get_download_url(self, file_uri) -> str:
+        '''
+        获取文件临时下载链接
+        @param file_uri: 文件URI
+        @return: 下载链接
+        '''
         r = self.request('post',
                          '/file/url',
                          json={
@@ -119,11 +148,22 @@ class CloudreveV4:
         return url
 
     def download(self, file_uri, save_path):
+        '''
+        下载文件至本地
+        @param file_uri: 文件URI
+        @param save_path: 保存路径
+        '''
         download_url = self.get_download_url(revise_file_path(file_uri))
         download_file(download_url, save_path, self.session)
 
     def get_source_url(self, uris):
-        is_list = type(uris) == list
+        '''
+        获取文件直链
+        @param uris(str|list): 文件URL，可传递列表
+        @return: 直链列表，若link_only=True，则列表项为字符串；否则返回包含file_url和link的字典列表。
+        请注意：由于Cloudreve API设计问题，传入的文件URL为列表时，返回的数据无序且不包含file_uri。因此请勿在同时获取多个直链时启用link_only。
+        '''
+        is_list = type(uris) is list
         r = self.request('put',
                          '/file/source',
                          json={'uris': uris_to_list(uris)})
@@ -138,6 +178,16 @@ class CloudreveV4:
                       password=None,
                       share_view=None,
                       show_readme=None) -> str:
+        '''
+        获取文件分享链接
+        @param file_uri: 文件或文件夹URI
+        @param downloads(int|None): 下载次数限制（默认不限制）
+        @param expire(int|None): 过期时间（自现在开始的秒数）
+        @param password(str|None): 密码
+        @param share_view(bool|None): 是否允许预览分享的文件夹（仅对文件夹有效，默认False）
+        @param show_readme(bool|None): 是否显示README文件（仅对文件夹有效，默认False）
+        @return: 分享链接
+        '''
         r = self.request('put',
                          '/share',
                          json={
@@ -155,6 +205,12 @@ class CloudreveV4:
                 uri,
                 type: Literal['folder', 'file'],
                 err_on_conflict=False):
+        '''
+        创建文件夹或文件
+        @param uri: 目标URI
+        @param type: 创建类型，folder或file
+        @param err_on_conflict: 若目标已存在，是否报错
+        '''
         return self.request('post',
                             '/file/create',
                             json={
@@ -164,14 +220,29 @@ class CloudreveV4:
                             })
 
     def create_file(self, uri, err_on_conflict=False):
+        '''
+        创建文件
+        @param uri: 目标URI
+        @param err_on_conflict: 若目标已存在，是否报错
+        '''
         return self._create(uri, 'file', err_on_conflict)
 
     def create_folder(self, uri, err_on_conflict=False):
+        '''
+        创建文件夹
+        @param uri: 目标URI
+        @param err_on_conflict: 若目标已存在，是否报错
+        '''
         return self._create(uri, 'folder', err_on_conflict)
 
     create_dir = create_directory = create_folder
 
     def update_file_content(self, file_uri, content):
+        '''
+        更新文本文件内容
+        @param file_uri: 文件URI
+        @param content: 新内容
+        '''
         return self.request('put',
                             '/file/content',
                             params={'uri': revise_file_path(file_uri)},
@@ -181,6 +252,12 @@ class CloudreveV4:
                uris: Union[str | List[str]],
                unlink=False,
                trash_bin=False):
+        '''
+        删除文件或文件夹
+        @param uris(str|list): 文件URI
+        @param unlink: 仅解除链接
+        @param trash_bin: 是否移动至回收站
+        '''
         return self.request('delete',
                             '/file',
                             json={
@@ -192,6 +269,11 @@ class CloudreveV4:
     remove = delete
 
     def rename(self, uri: str, new_name: str):
+        '''
+        重命名文件或文件夹
+        @param uri: 文件URI
+        @param new_name: 新名称
+        '''
         return self.request('post',
                             '/file/rename',
                             json={
@@ -200,6 +282,12 @@ class CloudreveV4:
                             })
 
     def copy_or_move(self, uris, dst, copy=False):
+        '''
+        通过来源文件夹和文件ID复制文件或文件夹
+        @param uris: 源文件或文件夹URI列表
+        @param dst: 目标目录
+        @param copy: 是否为复制操作，默认为False（移动操作）
+        '''
         return self.request('post',
                             '/file/move',
                             json={
@@ -209,9 +297,19 @@ class CloudreveV4:
                             })
 
     def copy(self, uris: Union[str, List[str]], dst: str):
+        '''
+        通过路径复制文件或文件夹
+        @param uris: 源文件或文件夹URI或URI列表
+        @param dst: 目标目录
+        '''
         return self.copy_or_move(uris, dst, copy=True)
 
     def move(self, uris: Union[str, List[str]], dst: str):
+        '''
+        通过路径移动文件或文件夹
+        @param uris: 源文件或文件夹URI或URI列表
+        @param dst: 目标目录
+        '''
         return self.copy_or_move(uris, dst, copy=False)
 
     def _upload_to_local(self, local_file: Path, session_id, chunk_size,
@@ -233,43 +331,30 @@ class CloudreveV4:
                 )
                 block_id += 1
 
-    def _upload_to_remote_direct(self, local_file: Path, session_id, chunk_size,
-                                 upload_urls, credential, **kwards):
-        """
-        [修正版] 直传 Slave 节点：基于文档规范
-        1. 使用 URL Query 参数传递 chunk index (?chunk=0)
-        2. 使用 credential 作为 Authorization 头
-        """
+    def _upload_to_remote_direct(self, local_file: Path, session_id,
+                                 chunk_size, upload_urls, credential,
+                                 **kwards):
         base_upload_url = upload_urls[0]
-        
-        # 构造专属 Header，覆盖 Session 默认的 Token
-        # Spec 要求 Authorization 必须是 credential 的值
+
         headers = {
             'Content-Type': 'application/octet-stream',
-            'Authorization': credential
+            'Authorization': credential,
         }
 
         with open(local_file, 'rb') as file:
             block_id = 0
-            while True:
-                chunk = file.read(chunk_size)
-                if not chunk:
-                    break
-                
+            chunk = file.read(chunk_size)
+            while chunk:
                 headers['Content-Length'] = str(len(chunk))
-                
-                # Spec: Chunk index is passed through query `chunk`
-                # 使用 params 参数自动处理 ?chunk=x
-                params = {'chunk': block_id}
-                
-                # 直发 POST 请求
-                # 注意：这里使用 request (来自 requests 库) 而不是 self.request
-                r = request('post', base_upload_url, params=params, headers=headers, data=chunk)
-                
-                if r.status_code != 200:
-                     raise Exception(f"Slave Upload Failed: HTTP {r.status_code} - {r.text}")
-                
+
+                self.request('post',
+                             base_upload_url,
+                             params={'chunk': block_id},
+                             headers=headers,
+                             data=chunk)
+
                 block_id += 1
+                chunk = file.read(chunk_size)
 
     def _upload_to_onedrive(self, local_file: Path, session_id, chunk_size,
                             upload_urls, callback_secret, **kwards):
@@ -291,9 +376,38 @@ class CloudreveV4:
         self.request('post',
                      f'/callback/onedrive/{session_id}/{callback_secret}')
 
+    def _upload_to_oss(
+        self,
+        local_file: Path,
+        sessionID,
+        chunkSize,
+        expires,
+        uploadURLs,
+        completeURL,
+        **kwards,
+    ):
+        upload_url = uploadURLs[0]
+        file_size = local_file.stat().st_size
+        with open(local_file, 'rb') as file:
+            for i in range(0, file_size, chunkSize):
+                start = i
+                end = min(i + chunkSize, file_size) - 1
+                request(
+                    'put',
+                    upload_url,
+                    headers={
+                        'Content-Type': 'application/octet-stream',
+                        'Content-Range': f'bytes {start}-{end}/{file_size}',
+                    },
+                    data=file.read(chunkSize),
+                )
+        request('post', completeURL)
+
     def upload(self, local_file_path, uri):
         '''
         上传文件
+        @param local_file_path: 本地文件路径
+        @param uri: 文件目标路径（包含文件名）
         '''
         local_file = Path(local_file_path)
         if not local_file.is_file():
@@ -301,7 +415,6 @@ class CloudreveV4:
 
         uri = revise_file_path(uri)
         dir = uri[:uri.rfind('/')]
-        
         policy = self.list(dir)['storage_policy']
         policy_id, policy_type = policy['id'], policy['type']
 
@@ -319,24 +432,28 @@ class CloudreveV4:
                              'mime_type': mime_type
                          })
 
-        # 【核心逻辑更新】
-        # 1. Remote 直传模式 (检测 upload_urls 是否存在且不为空)
-        if policy_type == 'remote' and r.get('upload_urls') and len(r['upload_urls']) > 0:
+        if policy_type == 'remote' and r.get('upload_urls') and len(
+                r['upload_urls']) > 0:
+            # Remote 直传模式
             return self._upload_to_remote_direct(
                 local_file=local_file,
                 **r,
             )
-        # 2. Local 或 Relay 模式
         elif policy_type == 'local' or policy_type == 'remote':
+            # Local 或 Relay 模式
             return self._upload_to_local(
                 local_file=local_file,
                 **r,
             )
-        # 3. OneDrive
         elif policy_type == 'onedrive':
             return self._upload_to_onedrive(
                 local_file=local_file,
                 **r,
             )
+        # elif policy_type == 'oss':
+        #     return self._upload_to_oss(
+        #         local_file=local_file,
+        #         **r,
+        #     )
         else:
             raise ValueError(f'存储策略 {policy_type} 暂时不受支持')

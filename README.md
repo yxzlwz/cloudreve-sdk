@@ -1,6 +1,6 @@
 # Cloudreve SDK
 
-本项目为我fork**第三方制作**的 [Cloudreve](https://github.com/cloudreve/Cloudreve) V3 和 V4 社区版的 Python SDK。
+本项目为**第三方制作**的 [Cloudreve](https://github.com/cloudreve/Cloudreve) V3 和 V4 社区版的 Python SDK。
 
 - 开源地址：https://github.com/yxzlwz/cloudreve-sdk
 - PyPI：https://pypi.org/project/cloudreve/
@@ -14,25 +14,25 @@ pip3 install cloudreve
 
 ## 适配情况
 
-| 功能                 | V3 适配情况 | V4 适配情况 |
-| -------------------- | ----------- | ----------- |
-| 登录                 | ✅           | ✅           |
-| 列目录               | ✅           | ✅           |
-| 获取文件ID           | ✅           | 不需要      |
-| 删除文件             | ✅           | ✅           |
-| 获取文件属性         | ✅           | ✅           |
-| 获取下载URL          | ✅           | ✅           |
-| 下载文件             | ✅           | ✅           |
-| 创建目录             | ✅           | ✅           |
-| 复制文件             | ✅           | ✅           |
-| 重命名文件           | ✅           | ✅           |
-| 移动文件             | ✅           | ✅           |
-| 获取文件直链         | ✅           | ✅           |
-| 获取分享链接         | ✅           | ✅           |
-| 上传文件（本地存储） | ✅           | ✅           |
-| 上传文件（OneDrive） | ✅           | ✅           |
-| 上传文件（从机存储） | ✅           | ✅           |
-| 上传文件（OSS）      | 待测试      | 待测试      |
+| 功能                 | V3 适配情况 | V4 适配情况   |
+| -------------------- | ----------- | ------------- |
+| 登录                 | ✅           | ✅             |
+| 列目录               | ✅           | ✅             |
+| 获取文件ID           | ✅           | 不需要        |
+| 删除文件             | ✅           | ✅             |
+| 获取文件属性         | ✅           | ✅             |
+| 获取下载URL          | ✅           | ✅             |
+| 下载文件             | ✅           | ✅             |
+| 创建目录             | ✅           | ✅             |
+| 复制文件             | ✅           | ✅             |
+| 重命名文件           | ✅           | ✅             |
+| 移动文件             | ✅           | ✅             |
+| 获取文件直链         | ✅           | ✅             |
+| 获取分享链接         | ✅           | ✅             |
+| 上传文件（本地存储） | ✅           | ✅             |
+| 上传文件（OneDrive） | ✅           | ✅             |
+| 上传文件（OSS）      | 待测试      | 待测试        |
+| 上传文件（从机模式） | ❌           | ✅（未经测试） |
 
 说明：
 
@@ -175,3 +175,4 @@ share_link_str2 = conn.get_share_url(uri, downloads=10, expire=86400, password='
 ## 感谢
 
 - [@TeoZler](https://github.com/TeoZler) 协助测试 Cloudreve V4 OneDrive 上传
+- [@PTPAAA](https://github.com/PTPAAA) 提供 Cloudreve V4 [从机模式上传代码](https://github.com/PTPAAA/cloudreve-sdk/commit/130b5e9f5777a439fd82a4755bfff7a5968bf57f)
