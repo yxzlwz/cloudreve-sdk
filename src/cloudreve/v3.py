@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from requests import Session, request
-from urllib.parse import quote_plus
+from urllib.parse import quote_plus, urljoin
 
 from .utils import download_file
 
@@ -19,13 +19,11 @@ def generate_src(file_id, is_dir) -> dict:
 
 
 def revise_file_path(file_path: str) -> str:
-    if file_path[0] != '/':
+    if not file_path:
+        raise ValueError('File path must not be empty')
+    if not file_path.startswith('/'):
         file_path = '/' + file_path
-
-    while file_path.endswith('/'):
-        file_path = file_path[:-1]
-
-    return file_path
+    return file_path.rstrip('/') or '/'
 
 
 class Cloudreve:
@@ -112,7 +110,7 @@ class Cloudreve:
 
         file_path = revise_file_path(file_path)
 
-        dir = file_path[:file_path.rfind('/')]
+        dir = file_path[:file_path.rfind('/')] or '/'
         name = file_path[file_path.rfind('/') + 1:]
 
         file_list = self.list(dir)
@@ -156,9 +154,7 @@ class Cloudreve:
         '''
 
         url = self.request('put', f'/file/download/{file_id}')
-        if not url.startswith('http'):
-            url = self.base_url + url
-        return url
+        return urljoin(self.base_url + '/', url)
 
     def download(self, file_id, save_path):
         '''
@@ -290,7 +286,7 @@ class Cloudreve:
 
         file_path = revise_file_path(file_path)
 
-        src_dir = file_path[:file_path.rfind('/')]
+        src_dir = file_path[:file_path.rfind('/')] or '/'
         src_file_id, file_type = self.get_id(file_path, True)
 
         self._copy(src_dir, src_file_id, dst_dir, file_type == 'dir')
@@ -322,7 +318,7 @@ class Cloudreve:
 
         file_path = revise_file_path(file_path)
 
-        src_dir = file_path[:file_path.rfind('/')]
+        src_dir = file_path[:file_path.rfind('/')] or '/'
         src_file_id, file_type = self.get_id(file_path, True)
 
         self._move(src_dir, src_file_id, dst_dir, file_type == 'dir')
@@ -365,7 +361,7 @@ class Cloudreve:
             for i in range(0, file_size, chunkSize):
                 start = i
                 end = min(i + chunkSize, file_size) - 1
-                request(
+                response = request(
                     'put',
                     upload_url,
                     headers={
@@ -374,6 +370,10 @@ class Cloudreve:
                     },
                     data=file.read(chunkSize),
                 )
+                try:
+                    response.raise_for_status()
+                finally:
+                    response.close()
         self.request('post', f'/callback/onedrive/finish/{sessionID}', json={})
 
     def upload_to_oss(
@@ -421,6 +421,9 @@ class Cloudreve:
         if not local_file.is_file():
             raise FileNotFoundError(f'{local_file_path} is not a file')
 
+        file_path = revise_file_path(file_path)
+        if file_path == '/':
+            raise ValueError('Upload destination must include a file name')
         dir = file_path[:file_path.rfind('/')] or '/'
         name = file_path[file_path.rfind('/') + 1:]
 

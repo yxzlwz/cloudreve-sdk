@@ -1,6 +1,7 @@
 from mimetypes import guess_type
 from pathlib import Path
 from typing import List, Literal, Union
+from urllib.parse import urljoin, urlsplit
 
 from requests import Session, request
 
@@ -8,15 +9,16 @@ from .utils import download_file
 
 
 def revise_file_path(file_path: str) -> str:
+    if not file_path:
+        raise ValueError('File path must not be empty')
     if not file_path.startswith('cloudreve://'):
-        if file_path[0] != '/':
+        if not file_path.startswith('/'):
             file_path = '/' + file_path
         file_path = 'cloudreve://my' + file_path
 
-    while file_path.endswith('//'):
-        file_path = file_path[:-1]
-
-    return file_path
+    if not urlsplit(file_path).path.strip('/'):
+        return file_path.rstrip('/') + '/'
+    return file_path.rstrip('/')
 
 
 def uris_to_list(uris: Union[str, List[str]]) -> List[str]:
@@ -63,7 +65,11 @@ class CloudreveV4:
             self.session.headers.update(headers)
 
     def request(self, method, url, **kwargs):
-        r = self.session.request(method, self.base_url + url, **kwargs)
+        if urlsplit(url).scheme in ('http', 'https'):
+            target = url
+        else:
+            target = self.base_url + url
+        r = self.session.request(method, target, **kwargs)
         r = r.json()
 
         if r['code'] != 0:
@@ -140,12 +146,10 @@ class CloudreveV4:
                          '/file/url',
                          json={
                              'download': True,
-                             'uris': [file_uri],
+                             'uris': [revise_file_path(file_uri)],
                          })
         url = r['urls'][0]['url']
-        if not url.startswith('http'):
-            url = self.base_url + url
-        return url
+        return urljoin(self.base_url + '/', url)
 
     def download(self, file_uri, save_path):
         '''
@@ -249,7 +253,7 @@ class CloudreveV4:
                             data=content)
 
     def delete(self,
-               uris: Union[str | List[str]],
+               uris: Union[str, List[str]],
                unlink=False,
                trash_bin=False):
         '''
@@ -364,7 +368,7 @@ class CloudreveV4:
             for i in range(0, file_size, chunk_size):
                 start = i
                 end = min(i + chunk_size, file_size) - 1
-                request(
+                response = request(
                     'put',
                     upload_url,
                     headers={
@@ -373,6 +377,10 @@ class CloudreveV4:
                     },
                     data=file.read(chunk_size),
                 )
+                try:
+                    response.raise_for_status()
+                finally:
+                    response.close()
         self.request('post',
                      f'/callback/onedrive/{session_id}/{callback_secret}')
 
@@ -414,6 +422,8 @@ class CloudreveV4:
             raise FileNotFoundError(f'{local_file_path} is not a file')
 
         uri = revise_file_path(uri)
+        if not urlsplit(uri).path.strip('/'):
+            raise ValueError('Upload destination must include a file name')
         dir = uri[:uri.rfind('/')]
         policy = self.list(dir)['storage_policy']
         policy_id, policy_type = policy['id'], policy['type']
